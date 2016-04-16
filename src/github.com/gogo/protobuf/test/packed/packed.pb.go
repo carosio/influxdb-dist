@@ -19,8 +19,7 @@ package packed
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-
-// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
+import _ "github.com/gogo/protobuf/gogoproto"
 
 import io "io"
 
@@ -31,26 +30,31 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.GoGoProtoPackageIsVersion1
+
 type NinRepNative struct {
-	Field1           []float64 `protobuf:"fixed64,1,rep,name=Field1" json:"Field1,omitempty"`
-	Field2           []float32 `protobuf:"fixed32,2,rep,name=Field2" json:"Field2,omitempty"`
-	Field3           []int32   `protobuf:"varint,3,rep,name=Field3" json:"Field3,omitempty"`
-	Field4           []int64   `protobuf:"varint,4,rep,name=Field4" json:"Field4,omitempty"`
-	Field5           []uint32  `protobuf:"varint,5,rep,name=Field5" json:"Field5,omitempty"`
-	Field6           []uint64  `protobuf:"varint,6,rep,name=Field6" json:"Field6,omitempty"`
-	Field7           []int32   `protobuf:"zigzag32,7,rep,name=Field7" json:"Field7,omitempty"`
-	Field8           []int64   `protobuf:"zigzag64,8,rep,name=Field8" json:"Field8,omitempty"`
-	Field9           []uint32  `protobuf:"fixed32,9,rep,name=Field9" json:"Field9,omitempty"`
-	Field10          []int32   `protobuf:"fixed32,10,rep,name=Field10" json:"Field10,omitempty"`
-	Field11          []uint64  `protobuf:"fixed64,11,rep,name=Field11" json:"Field11,omitempty"`
-	Field12          []int64   `protobuf:"fixed64,12,rep,name=Field12" json:"Field12,omitempty"`
-	Field13          []bool    `protobuf:"varint,13,rep,name=Field13" json:"Field13,omitempty"`
+	Field1           []float64 `protobuf:"fixed64,1,rep,name=Field1,json=field1" json:"Field1,omitempty"`
+	Field2           []float32 `protobuf:"fixed32,2,rep,name=Field2,json=field2" json:"Field2,omitempty"`
+	Field3           []int32   `protobuf:"varint,3,rep,name=Field3,json=field3" json:"Field3,omitempty"`
+	Field4           []int64   `protobuf:"varint,4,rep,name=Field4,json=field4" json:"Field4,omitempty"`
+	Field5           []uint32  `protobuf:"varint,5,rep,name=Field5,json=field5" json:"Field5,omitempty"`
+	Field6           []uint64  `protobuf:"varint,6,rep,name=Field6,json=field6" json:"Field6,omitempty"`
+	Field7           []int32   `protobuf:"zigzag32,7,rep,name=Field7,json=field7" json:"Field7,omitempty"`
+	Field8           []int64   `protobuf:"zigzag64,8,rep,name=Field8,json=field8" json:"Field8,omitempty"`
+	Field9           []uint32  `protobuf:"fixed32,9,rep,name=Field9,json=field9" json:"Field9,omitempty"`
+	Field10          []int32   `protobuf:"fixed32,10,rep,name=Field10,json=field10" json:"Field10,omitempty"`
+	Field11          []uint64  `protobuf:"fixed64,11,rep,name=Field11,json=field11" json:"Field11,omitempty"`
+	Field12          []int64   `protobuf:"fixed64,12,rep,name=Field12,json=field12" json:"Field12,omitempty"`
+	Field13          []bool    `protobuf:"varint,13,rep,name=Field13,json=field13" json:"Field13,omitempty"`
 	XXX_unrecognized []byte    `json:"-"`
 }
 
-func (m *NinRepNative) Reset()         { *m = NinRepNative{} }
-func (m *NinRepNative) String() string { return proto.CompactTextString(m) }
-func (*NinRepNative) ProtoMessage()    {}
+func (m *NinRepNative) Reset()                    { *m = NinRepNative{} }
+func (m *NinRepNative) String() string            { return proto.CompactTextString(m) }
+func (*NinRepNative) ProtoMessage()               {}
+func (*NinRepNative) Descriptor() ([]byte, []int) { return fileDescriptorPacked, []int{0} }
 
 func (m *NinRepNative) GetField1() []float64 {
 	if m != nil {
@@ -144,25 +148,26 @@ func (m *NinRepNative) GetField13() []bool {
 }
 
 type NinRepPackedNative struct {
-	Field1           []float64 `protobuf:"fixed64,1,rep,packed,name=Field1" json:"Field1,omitempty"`
-	Field2           []float32 `protobuf:"fixed32,2,rep,packed,name=Field2" json:"Field2,omitempty"`
-	Field3           []int32   `protobuf:"varint,3,rep,packed,name=Field3" json:"Field3,omitempty"`
-	Field4           []int64   `protobuf:"varint,4,rep,packed,name=Field4" json:"Field4,omitempty"`
-	Field5           []uint32  `protobuf:"varint,5,rep,packed,name=Field5" json:"Field5,omitempty"`
-	Field6           []uint64  `protobuf:"varint,6,rep,packed,name=Field6" json:"Field6,omitempty"`
-	Field7           []int32   `protobuf:"zigzag32,7,rep,packed,name=Field7" json:"Field7,omitempty"`
-	Field8           []int64   `protobuf:"zigzag64,8,rep,packed,name=Field8" json:"Field8,omitempty"`
-	Field9           []uint32  `protobuf:"fixed32,9,rep,packed,name=Field9" json:"Field9,omitempty"`
-	Field10          []int32   `protobuf:"fixed32,10,rep,packed,name=Field10" json:"Field10,omitempty"`
-	Field11          []uint64  `protobuf:"fixed64,11,rep,packed,name=Field11" json:"Field11,omitempty"`
-	Field12          []int64   `protobuf:"fixed64,12,rep,packed,name=Field12" json:"Field12,omitempty"`
-	Field13          []bool    `protobuf:"varint,13,rep,packed,name=Field13" json:"Field13,omitempty"`
+	Field1           []float64 `protobuf:"fixed64,1,rep,packed,name=Field1,json=field1" json:"Field1,omitempty"`
+	Field2           []float32 `protobuf:"fixed32,2,rep,packed,name=Field2,json=field2" json:"Field2,omitempty"`
+	Field3           []int32   `protobuf:"varint,3,rep,packed,name=Field3,json=field3" json:"Field3,omitempty"`
+	Field4           []int64   `protobuf:"varint,4,rep,packed,name=Field4,json=field4" json:"Field4,omitempty"`
+	Field5           []uint32  `protobuf:"varint,5,rep,packed,name=Field5,json=field5" json:"Field5,omitempty"`
+	Field6           []uint64  `protobuf:"varint,6,rep,packed,name=Field6,json=field6" json:"Field6,omitempty"`
+	Field7           []int32   `protobuf:"zigzag32,7,rep,packed,name=Field7,json=field7" json:"Field7,omitempty"`
+	Field8           []int64   `protobuf:"zigzag64,8,rep,packed,name=Field8,json=field8" json:"Field8,omitempty"`
+	Field9           []uint32  `protobuf:"fixed32,9,rep,packed,name=Field9,json=field9" json:"Field9,omitempty"`
+	Field10          []int32   `protobuf:"fixed32,10,rep,packed,name=Field10,json=field10" json:"Field10,omitempty"`
+	Field11          []uint64  `protobuf:"fixed64,11,rep,packed,name=Field11,json=field11" json:"Field11,omitempty"`
+	Field12          []int64   `protobuf:"fixed64,12,rep,packed,name=Field12,json=field12" json:"Field12,omitempty"`
+	Field13          []bool    `protobuf:"varint,13,rep,packed,name=Field13,json=field13" json:"Field13,omitempty"`
 	XXX_unrecognized []byte    `json:"-"`
 }
 
-func (m *NinRepPackedNative) Reset()         { *m = NinRepPackedNative{} }
-func (m *NinRepPackedNative) String() string { return proto.CompactTextString(m) }
-func (*NinRepPackedNative) ProtoMessage()    {}
+func (m *NinRepPackedNative) Reset()                    { *m = NinRepPackedNative{} }
+func (m *NinRepPackedNative) String() string            { return proto.CompactTextString(m) }
+func (*NinRepPackedNative) ProtoMessage()               {}
+func (*NinRepPackedNative) Descriptor() ([]byte, []int) { return fileDescriptorPacked, []int{1} }
 
 func (m *NinRepPackedNative) GetField1() []float64 {
 	if m != nil {
@@ -256,25 +261,26 @@ func (m *NinRepPackedNative) GetField13() []bool {
 }
 
 type NinRepNativeUnsafe struct {
-	Field1           []float64 `protobuf:"fixed64,1,rep,name=Field1" json:"Field1,omitempty"`
-	Field2           []float32 `protobuf:"fixed32,2,rep,name=Field2" json:"Field2,omitempty"`
-	Field3           []int32   `protobuf:"varint,3,rep,name=Field3" json:"Field3,omitempty"`
-	Field4           []int64   `protobuf:"varint,4,rep,name=Field4" json:"Field4,omitempty"`
-	Field5           []uint32  `protobuf:"varint,5,rep,name=Field5" json:"Field5,omitempty"`
-	Field6           []uint64  `protobuf:"varint,6,rep,name=Field6" json:"Field6,omitempty"`
-	Field7           []int32   `protobuf:"zigzag32,7,rep,name=Field7" json:"Field7,omitempty"`
-	Field8           []int64   `protobuf:"zigzag64,8,rep,name=Field8" json:"Field8,omitempty"`
-	Field9           []uint32  `protobuf:"fixed32,9,rep,name=Field9" json:"Field9,omitempty"`
-	Field10          []int32   `protobuf:"fixed32,10,rep,name=Field10" json:"Field10,omitempty"`
-	Field11          []uint64  `protobuf:"fixed64,11,rep,name=Field11" json:"Field11,omitempty"`
-	Field12          []int64   `protobuf:"fixed64,12,rep,name=Field12" json:"Field12,omitempty"`
-	Field13          []bool    `protobuf:"varint,13,rep,name=Field13" json:"Field13,omitempty"`
+	Field1           []float64 `protobuf:"fixed64,1,rep,name=Field1,json=field1" json:"Field1,omitempty"`
+	Field2           []float32 `protobuf:"fixed32,2,rep,name=Field2,json=field2" json:"Field2,omitempty"`
+	Field3           []int32   `protobuf:"varint,3,rep,name=Field3,json=field3" json:"Field3,omitempty"`
+	Field4           []int64   `protobuf:"varint,4,rep,name=Field4,json=field4" json:"Field4,omitempty"`
+	Field5           []uint32  `protobuf:"varint,5,rep,name=Field5,json=field5" json:"Field5,omitempty"`
+	Field6           []uint64  `protobuf:"varint,6,rep,name=Field6,json=field6" json:"Field6,omitempty"`
+	Field7           []int32   `protobuf:"zigzag32,7,rep,name=Field7,json=field7" json:"Field7,omitempty"`
+	Field8           []int64   `protobuf:"zigzag64,8,rep,name=Field8,json=field8" json:"Field8,omitempty"`
+	Field9           []uint32  `protobuf:"fixed32,9,rep,name=Field9,json=field9" json:"Field9,omitempty"`
+	Field10          []int32   `protobuf:"fixed32,10,rep,name=Field10,json=field10" json:"Field10,omitempty"`
+	Field11          []uint64  `protobuf:"fixed64,11,rep,name=Field11,json=field11" json:"Field11,omitempty"`
+	Field12          []int64   `protobuf:"fixed64,12,rep,name=Field12,json=field12" json:"Field12,omitempty"`
+	Field13          []bool    `protobuf:"varint,13,rep,name=Field13,json=field13" json:"Field13,omitempty"`
 	XXX_unrecognized []byte    `json:"-"`
 }
 
-func (m *NinRepNativeUnsafe) Reset()         { *m = NinRepNativeUnsafe{} }
-func (m *NinRepNativeUnsafe) String() string { return proto.CompactTextString(m) }
-func (*NinRepNativeUnsafe) ProtoMessage()    {}
+func (m *NinRepNativeUnsafe) Reset()                    { *m = NinRepNativeUnsafe{} }
+func (m *NinRepNativeUnsafe) String() string            { return proto.CompactTextString(m) }
+func (*NinRepNativeUnsafe) ProtoMessage()               {}
+func (*NinRepNativeUnsafe) Descriptor() ([]byte, []int) { return fileDescriptorPacked, []int{2} }
 
 func (m *NinRepNativeUnsafe) GetField1() []float64 {
 	if m != nil {
@@ -368,25 +374,26 @@ func (m *NinRepNativeUnsafe) GetField13() []bool {
 }
 
 type NinRepPackedNativeUnsafe struct {
-	Field1           []float64 `protobuf:"fixed64,1,rep,packed,name=Field1" json:"Field1,omitempty"`
-	Field2           []float32 `protobuf:"fixed32,2,rep,packed,name=Field2" json:"Field2,omitempty"`
-	Field3           []int32   `protobuf:"varint,3,rep,packed,name=Field3" json:"Field3,omitempty"`
-	Field4           []int64   `protobuf:"varint,4,rep,packed,name=Field4" json:"Field4,omitempty"`
-	Field5           []uint32  `protobuf:"varint,5,rep,packed,name=Field5" json:"Field5,omitempty"`
-	Field6           []uint64  `protobuf:"varint,6,rep,packed,name=Field6" json:"Field6,omitempty"`
-	Field7           []int32   `protobuf:"zigzag32,7,rep,packed,name=Field7" json:"Field7,omitempty"`
-	Field8           []int64   `protobuf:"zigzag64,8,rep,packed,name=Field8" json:"Field8,omitempty"`
-	Field9           []uint32  `protobuf:"fixed32,9,rep,packed,name=Field9" json:"Field9,omitempty"`
-	Field10          []int32   `protobuf:"fixed32,10,rep,packed,name=Field10" json:"Field10,omitempty"`
-	Field11          []uint64  `protobuf:"fixed64,11,rep,packed,name=Field11" json:"Field11,omitempty"`
-	Field12          []int64   `protobuf:"fixed64,12,rep,packed,name=Field12" json:"Field12,omitempty"`
-	Field13          []bool    `protobuf:"varint,13,rep,packed,name=Field13" json:"Field13,omitempty"`
+	Field1           []float64 `protobuf:"fixed64,1,rep,packed,name=Field1,json=field1" json:"Field1,omitempty"`
+	Field2           []float32 `protobuf:"fixed32,2,rep,packed,name=Field2,json=field2" json:"Field2,omitempty"`
+	Field3           []int32   `protobuf:"varint,3,rep,packed,name=Field3,json=field3" json:"Field3,omitempty"`
+	Field4           []int64   `protobuf:"varint,4,rep,packed,name=Field4,json=field4" json:"Field4,omitempty"`
+	Field5           []uint32  `protobuf:"varint,5,rep,packed,name=Field5,json=field5" json:"Field5,omitempty"`
+	Field6           []uint64  `protobuf:"varint,6,rep,packed,name=Field6,json=field6" json:"Field6,omitempty"`
+	Field7           []int32   `protobuf:"zigzag32,7,rep,packed,name=Field7,json=field7" json:"Field7,omitempty"`
+	Field8           []int64   `protobuf:"zigzag64,8,rep,packed,name=Field8,json=field8" json:"Field8,omitempty"`
+	Field9           []uint32  `protobuf:"fixed32,9,rep,packed,name=Field9,json=field9" json:"Field9,omitempty"`
+	Field10          []int32   `protobuf:"fixed32,10,rep,packed,name=Field10,json=field10" json:"Field10,omitempty"`
+	Field11          []uint64  `protobuf:"fixed64,11,rep,packed,name=Field11,json=field11" json:"Field11,omitempty"`
+	Field12          []int64   `protobuf:"fixed64,12,rep,packed,name=Field12,json=field12" json:"Field12,omitempty"`
+	Field13          []bool    `protobuf:"varint,13,rep,packed,name=Field13,json=field13" json:"Field13,omitempty"`
 	XXX_unrecognized []byte    `json:"-"`
 }
 
-func (m *NinRepPackedNativeUnsafe) Reset()         { *m = NinRepPackedNativeUnsafe{} }
-func (m *NinRepPackedNativeUnsafe) String() string { return proto.CompactTextString(m) }
-func (*NinRepPackedNativeUnsafe) ProtoMessage()    {}
+func (m *NinRepPackedNativeUnsafe) Reset()                    { *m = NinRepPackedNativeUnsafe{} }
+func (m *NinRepPackedNativeUnsafe) String() string            { return proto.CompactTextString(m) }
+func (*NinRepPackedNativeUnsafe) ProtoMessage()               {}
+func (*NinRepPackedNativeUnsafe) Descriptor() ([]byte, []int) { return fileDescriptorPacked, []int{3} }
 
 func (m *NinRepPackedNativeUnsafe) GetField1() []float64 {
 	if m != nil {
@@ -479,10 +486,16 @@ func (m *NinRepPackedNativeUnsafe) GetField13() []bool {
 	return nil
 }
 
+func init() {
+	proto.RegisterType((*NinRepNative)(nil), "packed.NinRepNative")
+	proto.RegisterType((*NinRepPackedNative)(nil), "packed.NinRepPackedNative")
+	proto.RegisterType((*NinRepNativeUnsafe)(nil), "packed.NinRepNativeUnsafe")
+	proto.RegisterType((*NinRepPackedNativeUnsafe)(nil), "packed.NinRepPackedNativeUnsafe")
+}
 func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 	this := &NinRepNative{}
 	if r.Intn(10) != 0 {
-		v1 := r.Intn(100)
+		v1 := r.Intn(10)
 		this.Field1 = make([]float64, v1)
 		for i := 0; i < v1; i++ {
 			this.Field1[i] = float64(r.Float64())
@@ -492,7 +505,7 @@ func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 		}
 	}
 	if r.Intn(10) != 0 {
-		v2 := r.Intn(100)
+		v2 := r.Intn(10)
 		this.Field2 = make([]float32, v2)
 		for i := 0; i < v2; i++ {
 			this.Field2[i] = float32(r.Float32())
@@ -502,7 +515,7 @@ func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 		}
 	}
 	if r.Intn(10) != 0 {
-		v3 := r.Intn(100)
+		v3 := r.Intn(10)
 		this.Field3 = make([]int32, v3)
 		for i := 0; i < v3; i++ {
 			this.Field3[i] = int32(r.Int31())
@@ -512,7 +525,7 @@ func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 		}
 	}
 	if r.Intn(10) != 0 {
-		v4 := r.Intn(100)
+		v4 := r.Intn(10)
 		this.Field4 = make([]int64, v4)
 		for i := 0; i < v4; i++ {
 			this.Field4[i] = int64(r.Int63())
@@ -522,21 +535,21 @@ func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 		}
 	}
 	if r.Intn(10) != 0 {
-		v5 := r.Intn(100)
+		v5 := r.Intn(10)
 		this.Field5 = make([]uint32, v5)
 		for i := 0; i < v5; i++ {
 			this.Field5[i] = uint32(r.Uint32())
 		}
 	}
 	if r.Intn(10) != 0 {
-		v6 := r.Intn(100)
+		v6 := r.Intn(10)
 		this.Field6 = make([]uint64, v6)
 		for i := 0; i < v6; i++ {
 			this.Field6[i] = uint64(uint64(r.Uint32()))
 		}
 	}
 	if r.Intn(10) != 0 {
-		v7 := r.Intn(100)
+		v7 := r.Intn(10)
 		this.Field7 = make([]int32, v7)
 		for i := 0; i < v7; i++ {
 			this.Field7[i] = int32(r.Int31())
@@ -546,7 +559,7 @@ func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 		}
 	}
 	if r.Intn(10) != 0 {
-		v8 := r.Intn(100)
+		v8 := r.Intn(10)
 		this.Field8 = make([]int64, v8)
 		for i := 0; i < v8; i++ {
 			this.Field8[i] = int64(r.Int63())
@@ -556,14 +569,14 @@ func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 		}
 	}
 	if r.Intn(10) != 0 {
-		v9 := r.Intn(100)
+		v9 := r.Intn(10)
 		this.Field9 = make([]uint32, v9)
 		for i := 0; i < v9; i++ {
 			this.Field9[i] = uint32(r.Uint32())
 		}
 	}
 	if r.Intn(10) != 0 {
-		v10 := r.Intn(100)
+		v10 := r.Intn(10)
 		this.Field10 = make([]int32, v10)
 		for i := 0; i < v10; i++ {
 			this.Field10[i] = int32(r.Int31())
@@ -573,14 +586,14 @@ func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 		}
 	}
 	if r.Intn(10) != 0 {
-		v11 := r.Intn(100)
+		v11 := r.Intn(10)
 		this.Field11 = make([]uint64, v11)
 		for i := 0; i < v11; i++ {
 			this.Field11[i] = uint64(uint64(r.Uint32()))
 		}
 	}
 	if r.Intn(10) != 0 {
-		v12 := r.Intn(100)
+		v12 := r.Intn(10)
 		this.Field12 = make([]int64, v12)
 		for i := 0; i < v12; i++ {
 			this.Field12[i] = int64(r.Int63())
@@ -590,7 +603,7 @@ func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 		}
 	}
 	if r.Intn(10) != 0 {
-		v13 := r.Intn(100)
+		v13 := r.Intn(10)
 		this.Field13 = make([]bool, v13)
 		for i := 0; i < v13; i++ {
 			this.Field13[i] = bool(bool(r.Intn(2) == 0))
@@ -605,7 +618,7 @@ func NewPopulatedNinRepNative(r randyPacked, easy bool) *NinRepNative {
 func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNative {
 	this := &NinRepPackedNative{}
 	if r.Intn(10) != 0 {
-		v14 := r.Intn(100)
+		v14 := r.Intn(10)
 		this.Field1 = make([]float64, v14)
 		for i := 0; i < v14; i++ {
 			this.Field1[i] = float64(r.Float64())
@@ -615,7 +628,7 @@ func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNativ
 		}
 	}
 	if r.Intn(10) != 0 {
-		v15 := r.Intn(100)
+		v15 := r.Intn(10)
 		this.Field2 = make([]float32, v15)
 		for i := 0; i < v15; i++ {
 			this.Field2[i] = float32(r.Float32())
@@ -625,7 +638,7 @@ func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNativ
 		}
 	}
 	if r.Intn(10) != 0 {
-		v16 := r.Intn(100)
+		v16 := r.Intn(10)
 		this.Field3 = make([]int32, v16)
 		for i := 0; i < v16; i++ {
 			this.Field3[i] = int32(r.Int31())
@@ -635,7 +648,7 @@ func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNativ
 		}
 	}
 	if r.Intn(10) != 0 {
-		v17 := r.Intn(100)
+		v17 := r.Intn(10)
 		this.Field4 = make([]int64, v17)
 		for i := 0; i < v17; i++ {
 			this.Field4[i] = int64(r.Int63())
@@ -645,21 +658,21 @@ func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNativ
 		}
 	}
 	if r.Intn(10) != 0 {
-		v18 := r.Intn(100)
+		v18 := r.Intn(10)
 		this.Field5 = make([]uint32, v18)
 		for i := 0; i < v18; i++ {
 			this.Field5[i] = uint32(r.Uint32())
 		}
 	}
 	if r.Intn(10) != 0 {
-		v19 := r.Intn(100)
+		v19 := r.Intn(10)
 		this.Field6 = make([]uint64, v19)
 		for i := 0; i < v19; i++ {
 			this.Field6[i] = uint64(uint64(r.Uint32()))
 		}
 	}
 	if r.Intn(10) != 0 {
-		v20 := r.Intn(100)
+		v20 := r.Intn(10)
 		this.Field7 = make([]int32, v20)
 		for i := 0; i < v20; i++ {
 			this.Field7[i] = int32(r.Int31())
@@ -669,7 +682,7 @@ func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNativ
 		}
 	}
 	if r.Intn(10) != 0 {
-		v21 := r.Intn(100)
+		v21 := r.Intn(10)
 		this.Field8 = make([]int64, v21)
 		for i := 0; i < v21; i++ {
 			this.Field8[i] = int64(r.Int63())
@@ -679,14 +692,14 @@ func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNativ
 		}
 	}
 	if r.Intn(10) != 0 {
-		v22 := r.Intn(100)
+		v22 := r.Intn(10)
 		this.Field9 = make([]uint32, v22)
 		for i := 0; i < v22; i++ {
 			this.Field9[i] = uint32(r.Uint32())
 		}
 	}
 	if r.Intn(10) != 0 {
-		v23 := r.Intn(100)
+		v23 := r.Intn(10)
 		this.Field10 = make([]int32, v23)
 		for i := 0; i < v23; i++ {
 			this.Field10[i] = int32(r.Int31())
@@ -696,14 +709,14 @@ func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNativ
 		}
 	}
 	if r.Intn(10) != 0 {
-		v24 := r.Intn(100)
+		v24 := r.Intn(10)
 		this.Field11 = make([]uint64, v24)
 		for i := 0; i < v24; i++ {
 			this.Field11[i] = uint64(uint64(r.Uint32()))
 		}
 	}
 	if r.Intn(10) != 0 {
-		v25 := r.Intn(100)
+		v25 := r.Intn(10)
 		this.Field12 = make([]int64, v25)
 		for i := 0; i < v25; i++ {
 			this.Field12[i] = int64(r.Int63())
@@ -713,7 +726,7 @@ func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNativ
 		}
 	}
 	if r.Intn(10) != 0 {
-		v26 := r.Intn(100)
+		v26 := r.Intn(10)
 		this.Field13 = make([]bool, v26)
 		for i := 0; i < v26; i++ {
 			this.Field13[i] = bool(bool(r.Intn(2) == 0))
@@ -728,7 +741,7 @@ func NewPopulatedNinRepPackedNative(r randyPacked, easy bool) *NinRepPackedNativ
 func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsafe {
 	this := &NinRepNativeUnsafe{}
 	if r.Intn(10) != 0 {
-		v27 := r.Intn(100)
+		v27 := r.Intn(10)
 		this.Field1 = make([]float64, v27)
 		for i := 0; i < v27; i++ {
 			this.Field1[i] = float64(r.Float64())
@@ -738,7 +751,7 @@ func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsaf
 		}
 	}
 	if r.Intn(10) != 0 {
-		v28 := r.Intn(100)
+		v28 := r.Intn(10)
 		this.Field2 = make([]float32, v28)
 		for i := 0; i < v28; i++ {
 			this.Field2[i] = float32(r.Float32())
@@ -748,7 +761,7 @@ func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsaf
 		}
 	}
 	if r.Intn(10) != 0 {
-		v29 := r.Intn(100)
+		v29 := r.Intn(10)
 		this.Field3 = make([]int32, v29)
 		for i := 0; i < v29; i++ {
 			this.Field3[i] = int32(r.Int31())
@@ -758,7 +771,7 @@ func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsaf
 		}
 	}
 	if r.Intn(10) != 0 {
-		v30 := r.Intn(100)
+		v30 := r.Intn(10)
 		this.Field4 = make([]int64, v30)
 		for i := 0; i < v30; i++ {
 			this.Field4[i] = int64(r.Int63())
@@ -768,21 +781,21 @@ func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsaf
 		}
 	}
 	if r.Intn(10) != 0 {
-		v31 := r.Intn(100)
+		v31 := r.Intn(10)
 		this.Field5 = make([]uint32, v31)
 		for i := 0; i < v31; i++ {
 			this.Field5[i] = uint32(r.Uint32())
 		}
 	}
 	if r.Intn(10) != 0 {
-		v32 := r.Intn(100)
+		v32 := r.Intn(10)
 		this.Field6 = make([]uint64, v32)
 		for i := 0; i < v32; i++ {
 			this.Field6[i] = uint64(uint64(r.Uint32()))
 		}
 	}
 	if r.Intn(10) != 0 {
-		v33 := r.Intn(100)
+		v33 := r.Intn(10)
 		this.Field7 = make([]int32, v33)
 		for i := 0; i < v33; i++ {
 			this.Field7[i] = int32(r.Int31())
@@ -792,7 +805,7 @@ func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsaf
 		}
 	}
 	if r.Intn(10) != 0 {
-		v34 := r.Intn(100)
+		v34 := r.Intn(10)
 		this.Field8 = make([]int64, v34)
 		for i := 0; i < v34; i++ {
 			this.Field8[i] = int64(r.Int63())
@@ -802,14 +815,14 @@ func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsaf
 		}
 	}
 	if r.Intn(10) != 0 {
-		v35 := r.Intn(100)
+		v35 := r.Intn(10)
 		this.Field9 = make([]uint32, v35)
 		for i := 0; i < v35; i++ {
 			this.Field9[i] = uint32(r.Uint32())
 		}
 	}
 	if r.Intn(10) != 0 {
-		v36 := r.Intn(100)
+		v36 := r.Intn(10)
 		this.Field10 = make([]int32, v36)
 		for i := 0; i < v36; i++ {
 			this.Field10[i] = int32(r.Int31())
@@ -819,14 +832,14 @@ func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsaf
 		}
 	}
 	if r.Intn(10) != 0 {
-		v37 := r.Intn(100)
+		v37 := r.Intn(10)
 		this.Field11 = make([]uint64, v37)
 		for i := 0; i < v37; i++ {
 			this.Field11[i] = uint64(uint64(r.Uint32()))
 		}
 	}
 	if r.Intn(10) != 0 {
-		v38 := r.Intn(100)
+		v38 := r.Intn(10)
 		this.Field12 = make([]int64, v38)
 		for i := 0; i < v38; i++ {
 			this.Field12[i] = int64(r.Int63())
@@ -836,7 +849,7 @@ func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsaf
 		}
 	}
 	if r.Intn(10) != 0 {
-		v39 := r.Intn(100)
+		v39 := r.Intn(10)
 		this.Field13 = make([]bool, v39)
 		for i := 0; i < v39; i++ {
 			this.Field13[i] = bool(bool(r.Intn(2) == 0))
@@ -851,7 +864,7 @@ func NewPopulatedNinRepNativeUnsafe(r randyPacked, easy bool) *NinRepNativeUnsaf
 func NewPopulatedNinRepPackedNativeUnsafe(r randyPacked, easy bool) *NinRepPackedNativeUnsafe {
 	this := &NinRepPackedNativeUnsafe{}
 	if r.Intn(10) != 0 {
-		v40 := r.Intn(100)
+		v40 := r.Intn(10)
 		this.Field1 = make([]float64, v40)
 		for i := 0; i < v40; i++ {
 			this.Field1[i] = float64(r.Float64())
@@ -861,7 +874,7 @@ func NewPopulatedNinRepPackedNativeUnsafe(r randyPacked, easy bool) *NinRepPacke
 		}
 	}
 	if r.Intn(10) != 0 {
-		v41 := r.Intn(100)
+		v41 := r.Intn(10)
 		this.Field2 = make([]float32, v41)
 		for i := 0; i < v41; i++ {
 			this.Field2[i] = float32(r.Float32())
@@ -871,7 +884,7 @@ func NewPopulatedNinRepPackedNativeUnsafe(r randyPacked, easy bool) *NinRepPacke
 		}
 	}
 	if r.Intn(10) != 0 {
-		v42 := r.Intn(100)
+		v42 := r.Intn(10)
 		this.Field3 = make([]int32, v42)
 		for i := 0; i < v42; i++ {
 			this.Field3[i] = int32(r.Int31())
@@ -881,7 +894,7 @@ func NewPopulatedNinRepPackedNativeUnsafe(r randyPacked, easy bool) *NinRepPacke
 		}
 	}
 	if r.Intn(10) != 0 {
-		v43 := r.Intn(100)
+		v43 := r.Intn(10)
 		this.Field4 = make([]int64, v43)
 		for i := 0; i < v43; i++ {
 			this.Field4[i] = int64(r.Int63())
@@ -891,21 +904,21 @@ func NewPopulatedNinRepPackedNativeUnsafe(r randyPacked, easy bool) *NinRepPacke
 		}
 	}
 	if r.Intn(10) != 0 {
-		v44 := r.Intn(100)
+		v44 := r.Intn(10)
 		this.Field5 = make([]uint32, v44)
 		for i := 0; i < v44; i++ {
 			this.Field5[i] = uint32(r.Uint32())
 		}
 	}
 	if r.Intn(10) != 0 {
-		v45 := r.Intn(100)
+		v45 := r.Intn(10)
 		this.Field6 = make([]uint64, v45)
 		for i := 0; i < v45; i++ {
 			this.Field6[i] = uint64(uint64(r.Uint32()))
 		}
 	}
 	if r.Intn(10) != 0 {
-		v46 := r.Intn(100)
+		v46 := r.Intn(10)
 		this.Field7 = make([]int32, v46)
 		for i := 0; i < v46; i++ {
 			this.Field7[i] = int32(r.Int31())
@@ -915,7 +928,7 @@ func NewPopulatedNinRepPackedNativeUnsafe(r randyPacked, easy bool) *NinRepPacke
 		}
 	}
 	if r.Intn(10) != 0 {
-		v47 := r.Intn(100)
+		v47 := r.Intn(10)
 		this.Field8 = make([]int64, v47)
 		for i := 0; i < v47; i++ {
 			this.Field8[i] = int64(r.Int63())
@@ -925,14 +938,14 @@ func NewPopulatedNinRepPackedNativeUnsafe(r randyPacked, easy bool) *NinRepPacke
 		}
 	}
 	if r.Intn(10) != 0 {
-		v48 := r.Intn(100)
+		v48 := r.Intn(10)
 		this.Field9 = make([]uint32, v48)
 		for i := 0; i < v48; i++ {
 			this.Field9[i] = uint32(r.Uint32())
 		}
 	}
 	if r.Intn(10) != 0 {
-		v49 := r.Intn(100)
+		v49 := r.Intn(10)
 		this.Field10 = make([]int32, v49)
 		for i := 0; i < v49; i++ {
 			this.Field10[i] = int32(r.Int31())
@@ -942,14 +955,14 @@ func NewPopulatedNinRepPackedNativeUnsafe(r randyPacked, easy bool) *NinRepPacke
 		}
 	}
 	if r.Intn(10) != 0 {
-		v50 := r.Intn(100)
+		v50 := r.Intn(10)
 		this.Field11 = make([]uint64, v50)
 		for i := 0; i < v50; i++ {
 			this.Field11[i] = uint64(uint64(r.Uint32()))
 		}
 	}
 	if r.Intn(10) != 0 {
-		v51 := r.Intn(100)
+		v51 := r.Intn(10)
 		this.Field12 = make([]int64, v51)
 		for i := 0; i < v51; i++ {
 			this.Field12[i] = int64(r.Int63())
@@ -959,7 +972,7 @@ func NewPopulatedNinRepPackedNativeUnsafe(r randyPacked, easy bool) *NinRepPacke
 		}
 	}
 	if r.Intn(10) != 0 {
-		v52 := r.Intn(100)
+		v52 := r.Intn(10)
 		this.Field13 = make([]bool, v52)
 		for i := 0; i < v52; i++ {
 			this.Field13[i] = bool(bool(r.Intn(2) == 0))
@@ -3372,3 +3385,31 @@ var (
 	ErrInvalidLengthPackedUnsafe = fmt.Errorf("proto: negative length found during unmarshaling")
 	ErrIntOverflowPackedUnsafe   = fmt.Errorf("proto: integer overflow")
 )
+
+var fileDescriptorPacked = []byte{
+	// 383 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xec, 0x92, 0xbd, 0x4e, 0xc2, 0x50,
+	0x14, 0xc7, 0xd3, 0x0f, 0x5a, 0xbc, 0x42, 0xc4, 0x0e, 0xe6, 0x84, 0x10, 0x35, 0x4c, 0x2e, 0x02,
+	0x6d, 0xf9, 0x74, 0x64, 0x70, 0x24, 0x86, 0xc4, 0x07, 0xe0, 0xa3, 0x60, 0xa3, 0x52, 0xa2, 0xc5,
+	0xc7, 0x30, 0x0e, 0xbe, 0x80, 0x6f, 0xe2, 0x43, 0x38, 0xb9, 0xf9, 0x16, 0x8e, 0x1e, 0x6e, 0x4f,
+	0x4f, 0x2f, 0x38, 0x3a, 0xb8, 0xb0, 0x71, 0x7f, 0xbf, 0x30, 0xf4, 0xf7, 0x3f, 0xa2, 0xb0, 0x1c,
+	0x4d, 0x6e, 0x83, 0x69, 0x6d, 0xf9, 0x10, 0xc5, 0x91, 0x63, 0x25, 0xaf, 0xf2, 0xf9, 0x3c, 0x8c,
+	0x6f, 0x56, 0xe3, 0xda, 0x24, 0xba, 0xaf, 0xcf, 0xa3, 0x79, 0x54, 0x97, 0x7a, 0xbc, 0x9a, 0xc9,
+	0x97, 0x7c, 0xc8, 0x5f, 0xc9, 0xdf, 0xaa, 0x1f, 0xba, 0x28, 0x0c, 0xc2, 0xc5, 0x30, 0x58, 0x0e,
+	0x46, 0x71, 0xf8, 0x14, 0x38, 0x47, 0xc2, 0xba, 0x0c, 0x83, 0xbb, 0xa9, 0x0b, 0xda, 0xa9, 0x71,
+	0xa6, 0x0d, 0xad, 0x99, 0x7c, 0x31, 0xf7, 0x40, 0x47, 0xae, 0x13, 0xf7, 0x98, 0xfb, 0x60, 0x20,
+	0xcf, 0x11, 0xf7, 0x99, 0x37, 0xc1, 0x44, 0x6e, 0x10, 0x6f, 0x32, 0x6f, 0x41, 0x0e, 0x79, 0x91,
+	0x78, 0x8b, 0x79, 0x1b, 0x2c, 0xe4, 0x26, 0xf1, 0x36, 0xf3, 0x0e, 0xd8, 0xc8, 0x0f, 0x89, 0x77,
+	0x98, 0x77, 0x21, 0x8f, 0xdc, 0x21, 0xde, 0x65, 0xde, 0x83, 0x3d, 0xe4, 0x36, 0xf1, 0x9e, 0x03,
+	0xc2, 0x4e, 0xbe, 0xab, 0x01, 0x02, 0xc5, 0xc1, 0xd0, 0x4e, 0x3e, 0xac, 0x91, 0x19, 0x17, 0xf6,
+	0xd1, 0x58, 0xa9, 0x71, 0x33, 0xe3, 0x41, 0x01, 0x4d, 0x29, 0x35, 0x5e, 0x66, 0x7c, 0x28, 0xa2,
+	0xc9, 0xa7, 0xc6, 0xbf, 0x30, 0x5f, 0xde, 0x4e, 0xb4, 0xea, 0xb3, 0x21, 0x9c, 0x24, 0xeb, 0x95,
+	0x9c, 0x85, 0xe2, 0x96, 0x37, 0xe3, 0xf6, 0xf5, 0x52, 0x16, 0xb8, 0xbc, 0x19, 0x58, 0x71, 0x1e,
+	0x3b, 0x8a, 0xac, 0x38, 0x9f, 0x1d, 0x85, 0x56, 0x5c, 0x93, 0x1d, 0xc5, 0x56, 0x5c, 0x8b, 0x1d,
+	0x05, 0x57, 0x5c, 0x9b, 0x1d, 0x45, 0x57, 0x5c, 0x87, 0x1d, 0x85, 0x57, 0x5c, 0x97, 0x1d, 0xc5,
+	0x57, 0x5c, 0xcf, 0xa9, 0x6c, 0x0d, 0x20, 0x25, 0x8f, 0x50, 0xd9, 0x1a, 0x41, 0xb5, 0x6e, 0x66,
+	0x69, 0x08, 0xd5, 0x7a, 0x99, 0xa5, 0x31, 0x54, 0x9b, 0x0e, 0xf2, 0xa9, 0xa7, 0x83, 0x24, 0x53,
+	0x5c, 0x2f, 0x1e, 0x47, 0xb3, 0xdd, 0xb5, 0xff, 0xf9, 0xda, 0xdf, 0xd7, 0x71, 0x5f, 0x0d, 0x01,
+	0xbf, 0xaf, 0x9d, 0x12, 0xef, 0x6e, 0xfe, 0x1f, 0x6e, 0x7e, 0x3d, 0x4b, 0xdf, 0xfc, 0xfe, 0x3a,
+	0xd6, 0x7e, 0x02, 0x00, 0x00, 0xff, 0xff, 0xa9, 0x4d, 0xb0, 0xaa, 0x27, 0x06, 0x00, 0x00,
+}

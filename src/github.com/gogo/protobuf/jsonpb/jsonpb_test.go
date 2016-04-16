@@ -37,14 +37,14 @@ import (
 
 	pb "github.com/gogo/protobuf/jsonpb/jsonpb_test_proto"
 	"github.com/gogo/protobuf/proto"
+	proto3pb "github.com/gogo/protobuf/proto/proto3_proto"
 )
 
 var (
 	marshaler = Marshaler{}
 
 	marshalerAllOptions = Marshaler{
-		EnumsAsString: true,
-		Indent:        "  ",
+		Indent: "  ",
 	}
 
 	simpleObject = &pb.Simple{
@@ -181,8 +181,8 @@ var (
 		RRepeats: []*pb.Repeats{innerRepeats, innerRepeats2},
 	}
 
-	complexObjectJSON = `{"color":1,` +
-		`"r_color":[0,1,2],` +
+	complexObjectJSON = `{"color":"GREEN",` +
+		`"r_color":["RED","GREEN","BLUE"],` +
 		`"simple":{"o_int32":-32},` +
 		`"r_simple":[{"o_int32":-32},{"o_int64":"25"}],` +
 		`"repeats":{"r_string":["roses","red"]},` +
@@ -254,7 +254,24 @@ var (
     }
   }
 }`
+	realNumber     = &pb.Real{Value: proto.Float64(3.14159265359)}
+	realNumberName = "Pi"
+	complexNumber  = &pb.Complex{Imaginary: proto.Float64(0.5772156649)}
+	realNumberJSON = `{` +
+		`"value":3.14159265359,` +
+		`"[jsonpb.Complex.real_extension]":{"imaginary":0.5772156649},` +
+		`"[jsonpb.name]":"Pi"` +
+		`}`
 )
+
+func init() {
+	if err := proto.SetExtension(realNumber, pb.E_Name, &realNumberName); err != nil {
+		panic(err)
+	}
+	if err := proto.SetExtension(realNumber, pb.E_Complex_RealExtension, complexNumber); err != nil {
+		panic(err)
+	}
+}
 
 var marshalingTests = []struct {
 	desc      string
@@ -268,13 +285,14 @@ var marshalingTests = []struct {
 	{"repeated fields pretty object", marshalerAllOptions, repeatsObject, repeatsObjectPrettyJSON},
 	{"nested message/enum flat object", marshaler, complexObject, complexObjectJSON},
 	{"nested message/enum pretty object", marshalerAllOptions, complexObject, complexObjectPrettyJSON},
-	{"enum-string flat object", Marshaler{EnumsAsString: true},
+	{"enum-string flat object", Marshaler{},
 		&pb.Widget{Color: pb.Widget_BLUE.Enum()}, `{"color":"BLUE"}`},
-	{"enum-value pretty object", Marshaler{Indent: " "},
+	{"enum-value pretty object", Marshaler{EnumsAsInts: true, Indent: " "},
 		&pb.Widget{Color: pb.Widget_BLUE.Enum()}, colorPrettyJSON},
 	{"unknown enum value object", marshalerAllOptions,
 		&pb.Widget{Color: pb.Widget_Color(1000).Enum(), RColor: []pb.Widget_Color{pb.Widget_RED}}, colorListPrettyJSON},
-	{"proto3 object with empty value", marshaler, &pb.Simple3{}, `{"dub":0}`},
+	{"empty value", marshaler, &pb.Simple3{}, `{}`},
+	{"empty value emitted", Marshaler{EmitDefaults: true}, &pb.Simple3{}, `{"dub":0}`},
 	{"map<int64, int32>", marshaler, &pb.Mappy{Nummy: map[int64]int32{1: 2, 3: 4}}, `{"nummy":{"1":2,"3":4}}`},
 	{"map<int64, int32>", marshalerAllOptions, &pb.Mappy{Nummy: map[int64]int32{1: 2, 3: 4}}, nummyPrettyJSON},
 	{"map<string, string>", marshaler,
@@ -294,6 +312,7 @@ var marshalingTests = []struct {
 		`{"m_bool_simple":{"true":{"o_int32":1}}}`},
 	{"oneof, not set", marshaler, &pb.MsgWithOneof{}, `{}`},
 	{"oneof, set", marshaler, &pb.MsgWithOneof{Union: &pb.MsgWithOneof_Title{Title: "Grand Poobah"}}, `{"title":"Grand Poobah"}`},
+	{"proto2 extension", marshaler, realNumber, realNumberJSON},
 }
 
 func TestMarshaling(t *testing.T) {
@@ -320,6 +339,8 @@ var unmarshalingTests = []struct {
 	{"nested message/enum pretty object", complexObjectPrettyJSON, complexObject},
 	{"enum-string object", `{"color":"BLUE"}`, &pb.Widget{Color: pb.Widget_BLUE.Enum()}},
 	{"enum-value object", "{\n \"color\": 2\n}", &pb.Widget{Color: pb.Widget_BLUE.Enum()}},
+	{"proto3 enum string", `{"hilarity":"PUNS"}`, &proto3pb.Message{Hilarity: proto3pb.Message_PUNS}},
+	{"proto3 enum value", `{"hilarity":1}`, &proto3pb.Message{Hilarity: proto3pb.Message_PUNS}},
 	{"unknown enum value object",
 		"{\n  \"color\": 1000,\n  \"r_color\": [\n    \"RED\"\n  ]\n}",
 		&pb.Widget{Color: pb.Widget_Color(1000).Enum(), RColor: []pb.Widget_Color{pb.Widget_RED}}},
@@ -354,15 +375,16 @@ func TestUnmarshaling(t *testing.T) {
 var unmarshalingShouldError = []struct {
 	desc string
 	in   string
+	pb   proto.Message
 }{
-	{"a value", "666"},
-	{"gibberish", "{adskja123;l23=-="},
+	{"a value", "666", new(pb.Simple)},
+	{"gibberish", "{adskja123;l23=-=", new(pb.Simple)},
+	{"unknown enum name", `{"hilarity":"DAVE"}`, new(proto3pb.Message)},
 }
 
 func TestUnmarshalingBadInput(t *testing.T) {
 	for _, tt := range unmarshalingShouldError {
-		obj := &pb.Simple{}
-		err := UnmarshalString(tt.in, obj)
+		err := UnmarshalString(tt.in, tt.pb)
 		if err == nil {
 			t.Errorf("an error was expected when parsing %q instead of an object", tt.desc)
 		}

@@ -3,7 +3,7 @@ package opentsdb
 import (
 	"time"
 
-	"github.com/influxdb/influxdb/toml"
+	"github.com/influxdata/influxdb/toml"
 )
 
 const (
@@ -29,6 +29,7 @@ const (
 	DefaultBatchPending = 5
 )
 
+// Config represents the configuration of the OpenTSDB service.
 type Config struct {
 	Enabled          bool          `toml:"enabled"`
 	BindAddress      string        `toml:"bind-address"`
@@ -40,8 +41,10 @@ type Config struct {
 	BatchSize        int           `toml:"batch-size"`
 	BatchPending     int           `toml:"batch-pending"`
 	BatchTimeout     toml.Duration `toml:"batch-timeout"`
+	LogPointErrors   bool          `toml:"log-point-errors"`
 }
 
+// NewConfig returns a new config for the service.
 func NewConfig() Config {
 	return Config{
 		BindAddress:      DefaultBindAddress,
@@ -53,5 +56,6 @@ func NewConfig() Config {
 		BatchSize:        DefaultBatchSize,
 		BatchPending:     DefaultBatchPending,
 		BatchTimeout:     toml.Duration(DefaultBatchTimeout),
+		LogPointErrors:   true,
 	}
 }

@@ -1,10 +1,12 @@
-package client
+package client // import "github.com/influxdata/influxdb/client"
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -13,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/influxdb/influxdb/models"
+	"github.com/influxdata/influxdb/models"
 )
 
 const (
@@ -31,6 +33,18 @@ const (
 type Query struct {
 	Command  string
 	Database string
+
+	// Chunked tells the server to send back chunked responses. This places
+	// less load on the server by sending back chunks of the response rather
+	// than waiting for the entire response all at once.
+	Chunked bool
+
+	// ChunkSize sets the maximum number of rows that will be returned per
+	// chunk. Chunks are either divided based on their series or if they hit
+	// the chunk size limit.
+	//
+	// Chunked must be set to true for this option to be used.
+	ChunkSize int
 }
 
 // ParseConnectionString will parse a string to create a valid connection URL
@@ -79,6 +93,7 @@ type Config struct {
 	UserAgent string
 	Timeout   time.Duration
 	Precision string
+	UnsafeSsl bool
 }
 
 // NewConfig will create a config to be used in connecting to the client
@@ -114,11 +129,19 @@ const (
 
 // NewClient will instantiate and return a connected client to issue commands to the server.
 func NewClient(c Config) (*Client, error) {
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: c.UnsafeSsl,
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+
 	client := Client{
 		url:        c.URL,
 		username:   c.Username,
 		password:   c.Password,
-		httpClient: &http.Client{Timeout: c.Timeout},
+		httpClient: &http.Client{Timeout: c.Timeout, Transport: tr},
 		userAgent:  c.UserAgent,
 		precision:  c.Precision,
 	}
@@ -147,6 +170,12 @@ func (c *Client) Query(q Query) (*Response, error) {
 	values := u.Query()
 	values.Set("q", q.Command)
 	values.Set("db", q.Database)
+	if q.Chunked {
+		values.Set("chunked", "true")
+		if q.ChunkSize > 0 {
+			values.Set("chunk_size", strconv.Itoa(q.ChunkSize))
+		}
+	}
 	if c.precision != "" {
 		values.Set("epoch", c.precision)
 	}
@@ -168,19 +197,38 @@ func (c *Client) Query(q Query) (*Response, error) {
 	defer resp.Body.Close()
 
 	var response Response
-	dec := json.NewDecoder(resp.Body)
-	dec.UseNumber()
-	decErr := dec.Decode(&response)
+	if q.Chunked {
+		cr := NewChunkedResponse(resp.Body)
+		for {
+			r, err := cr.NextResponse()
+			if err != nil {
+				// If we got an error while decoding the response, send that back.
+				return nil, err
+			}
 
-	// ignore this error if we got an invalid status code
-	if decErr != nil && decErr.Error() == "EOF" && resp.StatusCode != http.StatusOK {
-		decErr = nil
+			if r == nil {
+				break
+			}
+
+			response.Results = append(response.Results, r.Results...)
+			if r.Err != nil {
+				response.Err = r.Err
+				break
+			}
+		}
+	} else {
+		dec := json.NewDecoder(resp.Body)
+		dec.UseNumber()
+		if err := dec.Decode(&response); err != nil {
+			// Ignore EOF errors if we got an invalid status code.
+			if !(err == io.EOF && resp.StatusCode != http.StatusOK) {
+				return nil, err
+			}
+		}
 	}
-	// If we got a valid decode error, send that back
-	if decErr != nil {
-		return nil, decErr
-	}
-	// If we don't have an error in our json response, and didn't get StatusOK, then send back an error
+
+	// If we don't have an error in our json response, and didn't get StatusOK,
+	// then send back an error.
 	if resp.StatusCode != http.StatusOK && response.Error() == nil {
 		return &response, fmt.Errorf("received status code %d from server", resp.StatusCode)
 	}
@@ -196,6 +244,10 @@ func (c *Client) Write(bp BatchPoints) (*Response, error) {
 
 	var b bytes.Buffer
 	for _, p := range bp.Points {
+		err := checkPointTypes(p)
+		if err != nil {
+			return nil, err
+		}
 		if p.Raw != "" {
 			if _, err := b.WriteString(p.Raw); err != nil {
 				return nil, err
@@ -423,7 +475,7 @@ func (r *Response) UnmarshalJSON(b []byte) error {
 
 // Error returns the first error from any statement.
 // Returns nil if no errors occurred on any statements.
-func (r Response) Error() error {
+func (r *Response) Error() error {
 	if r.Err != nil {
 		return r.Err
 	}
@@ -433,6 +485,31 @@ func (r Response) Error() error {
 		}
 	}
 	return nil
+}
+
+// ChunkedResponse represents a response from the server that
+// uses chunking to stream the output.
+type ChunkedResponse struct {
+	dec *json.Decoder
+}
+
+// NewChunkedResponse reads a stream and produces responses from the stream.
+func NewChunkedResponse(r io.Reader) *ChunkedResponse {
+	dec := json.NewDecoder(r)
+	dec.UseNumber()
+	return &ChunkedResponse{dec: dec}
+}
+
+// NextResponse reads the next line of the stream and returns a response.
+func (r *ChunkedResponse) NextResponse() (*Response, error) {
+	var response Response
+	if err := r.dec.Decode(&response); err != nil {
+		if err == io.EOF {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &response, nil
 }
 
 // Point defines the fields that will be written to the database
@@ -640,6 +717,19 @@ func (bp *BatchPoints) UnmarshalJSON(b []byte) error {
 // Addr provides the current url as a string of the server the client is connected to.
 func (c *Client) Addr() string {
 	return c.url.String()
+}
+
+// checkPointTypes ensures no unsupported types are submitted to influxdb, returning error if they are found.
+func checkPointTypes(p Point) error {
+	for _, v := range p.Fields {
+		switch v.(type) {
+		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, float32, float64, bool, string, nil:
+			return nil
+		default:
+			return fmt.Errorf("unsupported point type: %T", v)
+		}
+	}
+	return nil
 }
 
 // helper functions

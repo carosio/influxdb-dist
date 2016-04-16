@@ -1,6 +1,6 @@
 package tsm1
 
-// Int64 encoding uses two different strategies depending on the range of values in
+// Integer encoding uses two different strategies depending on the range of values in
 // the uncompressed data.  Encoded values are first encoding used zig zag encoding.
 // This interleaves positive and negative integers across a range of positive integers.
 //
@@ -36,30 +36,18 @@ const (
 	intCompressedRLE = 2
 )
 
-// Int64Encoder encoders int64 into byte slices
-type Int64Encoder interface {
-	Write(v int64)
-	Bytes() ([]byte, error)
-}
-
-// Int64Decoder decodes a byte slice into int64s
-type Int64Decoder interface {
-	Next() bool
-	Read() int64
-	Error() error
-}
-
-type int64Encoder struct {
+// IntegerEncoder encoders int64 into byte slices
+type IntegerEncoder struct {
 	prev   int64
 	rle    bool
 	values []uint64
 }
 
-func NewInt64Encoder() Int64Encoder {
-	return &int64Encoder{rle: true}
+func NewIntegerEncoder() IntegerEncoder {
+	return IntegerEncoder{rle: true}
 }
 
-func (e *int64Encoder) Write(v int64) {
+func (e *IntegerEncoder) Write(v int64) {
 	// Delta-encode each value as it's written.  This happens before
 	// ZigZagEncoding because the deltas could be negative.
 	delta := v - e.prev
@@ -72,7 +60,7 @@ func (e *int64Encoder) Write(v int64) {
 	e.values = append(e.values, enc)
 }
 
-func (e *int64Encoder) Bytes() ([]byte, error) {
+func (e *IntegerEncoder) Bytes() ([]byte, error) {
 	// Only run-length encode if it could be reduce storage size
 	if e.rle && len(e.values) > 2 {
 		return e.encodeRLE()
@@ -88,7 +76,7 @@ func (e *int64Encoder) Bytes() ([]byte, error) {
 	return e.encodePacked()
 }
 
-func (e *int64Encoder) encodeRLE() ([]byte, error) {
+func (e *IntegerEncoder) encodeRLE() ([]byte, error) {
 	// Large varints can take up to 10 bytes
 	b := make([]byte, 1+10*3)
 
@@ -107,7 +95,7 @@ func (e *int64Encoder) encodeRLE() ([]byte, error) {
 	return b[:i], nil
 }
 
-func (e *int64Encoder) encodePacked() ([]byte, error) {
+func (e *IntegerEncoder) encodePacked() ([]byte, error) {
 	if len(e.values) == 0 {
 		return nil, nil
 	}
@@ -133,7 +121,7 @@ func (e *int64Encoder) encodePacked() ([]byte, error) {
 	return b, nil
 }
 
-func (e *int64Encoder) encodeUncompressed() ([]byte, error) {
+func (e *IntegerEncoder) encodeUncompressed() ([]byte, error) {
 	if len(e.values) == 0 {
 		return nil, nil
 	}
@@ -148,7 +136,8 @@ func (e *int64Encoder) encodeUncompressed() ([]byte, error) {
 	return b, nil
 }
 
-type int64Decoder struct {
+// IntegerDecoder decodes a byte slice into int64s.
+type IntegerDecoder struct {
 	values []uint64
 	bytes  []byte
 	i      int
@@ -165,8 +154,8 @@ type int64Decoder struct {
 	err      error
 }
 
-func NewInt64Decoder(b []byte) Int64Decoder {
-	d := &int64Decoder{
+func NewIntegerDecoder(b []byte) IntegerDecoder {
+	d := IntegerDecoder{
 		// 240 is the maximum number of values that can be encoded into a single uint64 using simple8b
 		values: make([]uint64, 240),
 	}
@@ -175,7 +164,7 @@ func NewInt64Decoder(b []byte) Int64Decoder {
 	return d
 }
 
-func (d *int64Decoder) SetBytes(b []byte) {
+func (d *IntegerDecoder) SetBytes(b []byte) {
 	if len(b) > 0 {
 		d.encoding = b[0] >> 4
 		d.bytes = b[1:]
@@ -185,7 +174,7 @@ func (d *int64Decoder) SetBytes(b []byte) {
 	d.n = 0
 }
 
-func (d *int64Decoder) Next() bool {
+func (d *IntegerDecoder) Next() bool {
 	if d.i >= d.n && len(d.bytes) == 0 {
 		return false
 	}
@@ -207,11 +196,11 @@ func (d *int64Decoder) Next() bool {
 	return d.i < d.n
 }
 
-func (d *int64Decoder) Error() error {
+func (d *IntegerDecoder) Error() error {
 	return d.err
 }
 
-func (d *int64Decoder) Read() int64 {
+func (d *IntegerDecoder) Read() int64 {
 	switch d.encoding {
 	case intCompressedRLE:
 		return ZigZagDecode(d.rleFirst + uint64(d.i)*d.rleDelta)
@@ -225,7 +214,7 @@ func (d *int64Decoder) Read() int64 {
 	}
 }
 
-func (d *int64Decoder) decodeRLE() {
+func (d *IntegerDecoder) decodeRLE() {
 	if len(d.bytes) == 0 {
 		return
 	}
@@ -256,7 +245,7 @@ func (d *int64Decoder) decodeRLE() {
 	d.bytes = nil
 }
 
-func (d *int64Decoder) decodePacked() {
+func (d *IntegerDecoder) decodePacked() {
 	if len(d.bytes) == 0 {
 		return
 	}
@@ -281,7 +270,7 @@ func (d *int64Decoder) decodePacked() {
 	d.bytes = d.bytes[8:]
 }
 
-func (d *int64Decoder) decodeUncompressed() {
+func (d *IntegerDecoder) decodeUncompressed() {
 	if len(d.bytes) == 0 {
 		return
 	}

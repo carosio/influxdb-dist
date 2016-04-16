@@ -3,7 +3,7 @@ package collectd
 import (
 	"time"
 
-	"github.com/influxdb/influxdb/toml"
+	"github.com/influxdata/influxdb/toml"
 )
 
 const (
@@ -22,9 +22,10 @@ const (
 	// DefaultBatchPending is the default number of pending write batches.
 	DefaultBatchPending = 10
 
-	// DefaultBatchTimeout is the default batch timeout.
+	// DefaultBatchDuration is the default batch timeout duration.
 	DefaultBatchDuration = toml.Duration(10 * time.Second)
 
+	// DefaultTypesDB is the default location of the collectd types db file.
 	DefaultTypesDB = "/usr/share/collectd/types.db"
 
 	// DefaultReadBuffer is the default buffer size for the UDP listener.

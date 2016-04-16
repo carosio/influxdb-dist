@@ -1,12 +1,12 @@
 # InfluxDB Client
 
-[![GoDoc](https://godoc.org/github.com/influxdb/influxdb?status.svg)](http://godoc.org/github.com/influxdb/influxdb/client/v2)
+[![GoDoc](https://godoc.org/github.com/influxdata/influxdb?status.svg)](http://godoc.org/github.com/influxdata/influxdb/client/v2)
 
 ## Description
 
 **NOTE:** The Go client library now has a "v2" version, with the old version
 being deprecated. The new version can be imported at
-`import "github.com/influxdb/influxdb/client/v2"`. It is not backwards-compatible.
+`import "github.com/influxdata/influxdb/client/v2"`. It is not backwards-compatible.
 
 A Go client library written and maintained by the **InfluxDB** team.
 This package provides convenience functions to read and write time series data.
@@ -22,14 +22,14 @@ name, a port and the cluster user credentials if applicable. The default port is
 8086. You can customize these settings to your specific installation via the
 **InfluxDB** configuration file.
 
-Thought not necessary for experimentation, you may want to create a new user
+Though not necessary for experimentation, you may want to create a new user
 and authenticate the connection to your database.
 
 For more information please check out the
-[Cluster Admin Docs](http://influxdb.com/docs/v0.9/query_language/database_administration.html).
+[Admin Docs](https://docs.influxdata.com/influxdb/v0.10/administration).
 
 For the impatient, you can create a new admin user _bubba_ by firing off the
-[InfluxDB CLI](https://github.com/influxdb/influxdb/blob/master/cmd/influx/main.go).
+[InfluxDB CLI](https://github.com/influxdata/influxdb/blob/master/cmd/influx/main.go).
 
 ```shell
 influx
@@ -48,14 +48,13 @@ the configuration below.
 ```go
 package main
 
-import
 import (
 	"net/url"
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/influxdb/influxdb/client/v2"
+	"github.com/influxdata/influxdb/client/v2"
 )
 
 const (
@@ -66,18 +65,25 @@ const (
 
 func main() {
 	// Make client
-	u, _ := url.Parse("http://localhost:8086")
-	c := client.NewClient(client.Config{
-		URL: u,
+	c, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: "http://localhost:8086",
 		Username: username,
 		Password: password,
 	})
-
+	
+	if err != nil {
+	    log.Fatalln("Error: ", err)
+	}
+	
 	// Create a new point batch
-	bp := client.NewBatchPoints(client.BatchPointsConfig{
+	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  MyDB,
 		Precision: "s",
 	})
+	
+	if err != nil {
+	    log.Fatalln("Error: ", err)
+	}
 
 	// Create a point and add to batch
 	tags := map[string]string{"cpu": "cpu-total"}
@@ -86,7 +92,12 @@ func main() {
 		"system": 53.3,
 		"user":   46.6,
 	}
-	pt := client.NewPoint("cpu_usage", tags, fields, time.Now())
+	pt, err := client.NewPoint("cpu_usage", tags, fields, time.Now())
+	
+	if err != nil {
+	    log.Fatalln("Error: ", err)
+	}
+    	
 	bp.AddPoint(pt)
 
 	// Write the batch
@@ -167,6 +178,8 @@ func queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
 			return res, response.Error()
 		}
 		res = response.Results
+	} else {
+		return res, err
 	}
 	return res, nil
 }
@@ -247,10 +260,10 @@ func WriteUDP() {
 ## Go Docs
 
 Please refer to
-[http://godoc.org/github.com/influxdb/influxdb/client/v2](http://godoc.org/github.com/influxdb/influxdb/client/v2)
+[http://godoc.org/github.com/influxdata/influxdb/client/v2](http://godoc.org/github.com/influxdata/influxdb/client/v2)
 for documentation.
 
 ## See Also
 
 You can also examine how the client library is used by the
-[InfluxDB CLI](https://github.com/influxdb/influxdb/blob/master/cmd/influx/main.go).
+[InfluxDB CLI](https://github.com/influxdata/influxdb/blob/master/cmd/influx/main.go).

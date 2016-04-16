@@ -26,9 +26,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.PHONY: nuke regenerate tests clean install gofmt vet
+.PHONY: nuke regenerate tests clean install gofmt vet contributors
 
 all: clean install regenerate install tests errcheck vet
+
+buildserverall: clean install regenerate install tests vet
 
 install:
 	go install ./proto
@@ -54,6 +56,7 @@ gofmt:
 regenerate:
 	make -C protoc-gen-gogo/descriptor regenerate
 	make -C protoc-gen-gogo/plugin regenerate
+	make -C protoc-gen-gogo/testdata regenerate
 	make -C gogoproto regenerate
 	make -C proto/testdata regenerate
 	make -C jsonpb/jsonpb_test_proto regenerate
@@ -67,7 +70,9 @@ regenerate:
 	make -C test/moredefaults regenerate
 	make -C test/issue8 regenerate
 	make -C test/enumprefix regenerate
+	make -C test/enumcustomname regenerate
 	make -C test/packed regenerate
+	make -C test/protosize regenerate
 	make -C test/tags regenerate
 	make -C test/oneof regenerate
 	make -C test/oneof3 regenerate
@@ -79,6 +84,7 @@ regenerate:
 	make -C test/custombytesnonstruct regenerate
 	make -C test/required regenerate
 	make -C test/casttype regenerate
+	make -C test/castvalue regenerate
 	make -C vanity/test regenerate
 	make -C test/sizeunderscore regenerate
 	make -C test/issue34 regenerate
@@ -86,6 +92,8 @@ regenerate:
 	make -C test/indeximport-issue72 regenerate
 	make -C test/fuzztests regenerate
 	make -C test/oneofembed regenerate
+	make -C test/asymetric-issue125 regenerate
+	make -C test/filedotname regenerate
 	make gofmt
 
 tests:
@@ -102,7 +110,7 @@ errcheck:
 
 drone:
 	sudo apt-get install protobuf-compiler
-	(cd $(GOPATH)/src/github.com/gogo/protobuf && make all)
+	(cd $(GOPATH)/src/github.com/gogo/protobuf && make buildserverall)
 
 testall:
 	make -C protoc-gen-gogo/testdata test
@@ -112,4 +120,8 @@ testall:
 bench:
 	(cd test/mixbench && go build .)
 	(cd test/mixbench && ./mixbench)
+
+contributors:
+	git log --format='%aN <%aE>' | sort -fu > CONTRIBUTORS
+
 

@@ -1,4 +1,4 @@
-package udp
+package udp // import "github.com/influxdata/influxdb/services/udp"
 
 import (
 	"errors"
@@ -10,18 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/influxdb/influxdb"
-	"github.com/influxdb/influxdb/cluster"
-	"github.com/influxdb/influxdb/meta"
-	"github.com/influxdb/influxdb/models"
-	"github.com/influxdb/influxdb/tsdb"
+	"github.com/influxdata/influxdb"
+	"github.com/influxdata/influxdb/models"
+	"github.com/influxdata/influxdb/services/meta"
+	"github.com/influxdata/influxdb/tsdb"
 )
 
 const (
-	// Maximum UDP packet size
-	// see https://en.wikipedia.org/wiki/User_Datagram_Protocol#Packet_structure
-	UDPBufferSize = 65536
-
 	// Arbitrary, testing indicated that this doesn't typically get over 10
 	parserChanLen = 1000
 )
@@ -53,17 +48,18 @@ type Service struct {
 	config     Config
 
 	PointsWriter interface {
-		WritePoints(p *cluster.WritePointsRequest) error
+		WritePoints(database, retentionPolicy string, consistencyLevel models.ConsistencyLevel, points []models.Point) error
 	}
 
-	MetaStore interface {
-		CreateDatabaseIfNotExists(name string) (*meta.DatabaseInfo, error)
+	MetaClient interface {
+		CreateDatabase(name string) (*meta.DatabaseInfo, error)
 	}
 
 	Logger  *log.Logger
 	statMap *expvar.Map
 }
 
+// NewService returns a new instance of Service.
 func NewService(c Config) *Service {
 	d := *c.WithDefaults()
 	return &Service{
@@ -75,6 +71,7 @@ func NewService(c Config) *Service {
 	}
 }
 
+// Open starts the service
 func (s *Service) Open() (err error) {
 	// Configure expvar monitoring. It's OK to do this even if the service fails to open and
 	// should be done before any data could arrive for the service.
@@ -89,7 +86,7 @@ func (s *Service) Open() (err error) {
 		return errors.New("database has to be specified in config")
 	}
 
-	if _, err := s.MetaStore.CreateDatabaseIfNotExists(s.config.Database); err != nil {
+	if _, err := s.MetaClient.CreateDatabase(s.config.Database); err != nil {
 		return errors.New("Failed to ensure target database exists")
 	}
 
@@ -130,12 +127,7 @@ func (s *Service) writer() {
 	for {
 		select {
 		case batch := <-s.batcher.Out():
-			if err := s.PointsWriter.WritePoints(&cluster.WritePointsRequest{
-				Database:         s.config.Database,
-				RetentionPolicy:  s.config.RetentionPolicy,
-				ConsistencyLevel: cluster.ConsistencyLevelOne,
-				Points:           batch,
-			}); err == nil {
+			if err := s.PointsWriter.WritePoints(s.config.Database, s.config.RetentionPolicy, models.ConsistencyLevelAny, batch); err == nil {
 				s.statMap.Add(statBatchesTrasmitted, 1)
 				s.statMap.Add(statPointsTransmitted, int64(len(batch)))
 			} else {
@@ -161,7 +153,7 @@ func (s *Service) serve() {
 			return
 		default:
 			// Keep processing.
-			buf := make([]byte, UDPBufferSize)
+			buf := make([]byte, s.config.UDPPayloadSize)
 			n, _, err := s.conn.ReadFromUDP(buf)
 			if err != nil {
 				s.statMap.Add(statReadFail, 1)
@@ -182,11 +174,11 @@ func (s *Service) parser() {
 		case <-s.done:
 			return
 		case buf := <-s.parserChan:
-			points, err := models.ParsePoints(buf)
+			points, err := models.ParsePointsWithPrecision(buf, time.Now().UTC(), s.config.Precision)
 			if err != nil {
 				s.statMap.Add(statPointsParseFail, 1)
 				s.Logger.Printf("Failed to parse points: %s", err)
-				return
+				continue
 			}
 
 			for _, point := range points {
@@ -197,6 +189,7 @@ func (s *Service) parser() {
 	}
 }
 
+// Close closes the underlying listener.
 func (s *Service) Close() error {
 	if s.conn == nil {
 		return errors.New("Service already closed")
@@ -221,6 +214,7 @@ func (s *Service) SetLogger(l *log.Logger) {
 	s.Logger = l
 }
 
+// Addr returns the listener's address
 func (s *Service) Addr() net.Addr {
 	return s.addr
 }

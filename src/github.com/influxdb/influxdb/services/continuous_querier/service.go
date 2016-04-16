@@ -1,4 +1,4 @@
-package continuous_querier
+package continuous_querier // import "github.com/influxdata/influxdb/services/continuous_querier"
 
 import (
 	"errors"
@@ -10,14 +10,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/influxdb/influxdb"
-	"github.com/influxdb/influxdb/influxql"
-	"github.com/influxdb/influxdb/meta"
-	"github.com/influxdb/influxdb/tsdb"
+	"github.com/influxdata/influxdb"
+	"github.com/influxdata/influxdb/influxql"
+	"github.com/influxdata/influxdb/services/meta"
 )
 
 const (
-	// When planning a select statement, passing zero tells it not to chunk results. Only applies to raw queries
+	// NoChunkingSize specifies when not to chunk results. When planning
+	// a select statement, passing zero tells it not to chunk results.
+	// Only applies to raw queries.
 	NoChunkingSize = 0
 )
 
@@ -34,14 +35,9 @@ type ContinuousQuerier interface {
 	Run(database, name string, t time.Time) error
 }
 
-// queryExecutor is an internal interface to make testing easier.
-type queryExecutor interface {
-	ExecuteQuery(query *influxql.Query, database string, chunkSize int) (<-chan *influxql.Result, error)
-}
-
-// metaStore is an internal interface to make testing easier.
-type metaStore interface {
-	IsLeader() bool
+// metaClient is an internal interface to make testing easier.
+type metaClient interface {
+	AcquireLease(name string) (l *meta.Lease, err error)
 	Databases() ([]meta.DatabaseInfo, error)
 	Database(name string) (*meta.DatabaseInfo, error)
 }
@@ -70,8 +66,8 @@ func (rr *RunRequest) matches(cq *meta.ContinuousQueryInfo) bool {
 
 // Service manages continuous query execution.
 type Service struct {
-	MetaStore     metaStore
-	QueryExecutor queryExecutor
+	MetaClient    metaClient
+	QueryExecutor influxql.QueryExecutor
 	Config        *Config
 	RunInterval   time.Duration
 	// RunCh can be used by clients to signal service to run CQs.
@@ -90,7 +86,7 @@ type Service struct {
 func NewService(c Config) *Service {
 	s := &Service{
 		Config:         &c,
-		RunInterval:    time.Second,
+		RunInterval:    time.Duration(c.RunInterval),
 		RunCh:          make(chan *RunRequest),
 		loggingEnabled: c.LogEnabled,
 		statMap:        influxdb.NewStatistics("cq", "cq", nil),
@@ -109,7 +105,7 @@ func (s *Service) Open() error {
 		return nil
 	}
 
-	assert(s.MetaStore != nil, "MetaStore is nil")
+	assert(s.MetaClient != nil, "MetaClient is nil")
 	assert(s.QueryExecutor != nil, "QueryExecutor is nil")
 
 	s.stop = make(chan struct{})
@@ -142,17 +138,17 @@ func (s *Service) Run(database, name string, t time.Time) error {
 
 	if database != "" {
 		// Find the requested database.
-		db, err := s.MetaStore.Database(database)
+		db, err := s.MetaClient.Database(database)
 		if err != nil {
 			return err
 		} else if db == nil {
-			return tsdb.ErrDatabaseNotFound(database)
+			return influxql.ErrDatabaseNotFound(database)
 		}
 		dbs = append(dbs, *db)
 	} else {
 		// Get all databases.
 		var err error
-		dbs, err = s.MetaStore.Databases()
+		dbs, err = s.MetaClient.Databases()
 		if err != nil {
 			return err
 		}
@@ -165,8 +161,11 @@ func (s *Service) Run(database, name string, t time.Time) error {
 		// Loop through CQs in each DB executing the ones that match name.
 		for _, cq := range db.ContinuousQueries {
 			if name == "" || cq.Name == name {
-				// Reset the last run time for the CQ.
-				s.lastRuns[cq.Name] = time.Time{}
+				// Remove the last run time for the CQ
+				id := fmt.Sprintf("%s:%s", db.Name, cq.Name)
+				if _, ok := s.lastRuns[id]; ok {
+					delete(s.lastRuns, id)
+				}
 			}
 		}
 	}
@@ -179,6 +178,7 @@ func (s *Service) Run(database, name string, t time.Time) error {
 
 // backgroundLoop runs on a go routine and periodically executes CQs.
 func (s *Service) backgroundLoop() {
+	leaseName := "continuous_querier"
 	defer s.wg.Done()
 	for {
 		select {
@@ -186,22 +186,45 @@ func (s *Service) backgroundLoop() {
 			s.Logger.Println("continuous query service terminating")
 			return
 		case req := <-s.RunCh:
-			if s.MetaStore.IsLeader() {
-				s.Logger.Printf("running continuous queries by request for time: %v", req.Now.UnixNano())
+			if !s.hasContinuousQueries() {
+				continue
+			}
+			if _, err := s.MetaClient.AcquireLease(leaseName); err == nil {
+				s.Logger.Printf("running continuous queries by request for time: %v", req.Now)
 				s.runContinuousQueries(req)
 			}
 		case <-time.After(s.RunInterval):
-			if s.MetaStore.IsLeader() {
+			if !s.hasContinuousQueries() {
+				continue
+			}
+			if _, err := s.MetaClient.AcquireLease(leaseName); err == nil {
 				s.runContinuousQueries(&RunRequest{Now: time.Now()})
 			}
 		}
 	}
 }
 
+// hasContinuousQueries returns true if any CQs exist.
+func (s *Service) hasContinuousQueries() bool {
+	// Get list of all databases.
+	dbs, err := s.MetaClient.Databases()
+	if err != nil {
+		s.Logger.Println("error getting databases")
+		return false
+	}
+	// Loop through all databases executing CQs.
+	for _, db := range dbs {
+		if len(db.ContinuousQueries) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // runContinuousQueries gets CQs from the meta store and runs them.
 func (s *Service) runContinuousQueries(req *RunRequest) {
 	// Get list of all databases.
-	dbs, err := s.MetaStore.Databases()
+	dbs, err := s.MetaClient.Databases()
 	if err != nil {
 		s.Logger.Println("error getting databases")
 		return
@@ -237,7 +260,8 @@ func (s *Service) ExecuteContinuousQuery(dbi *meta.DatabaseInfo, cqi *meta.Conti
 	// Get the last time this CQ was run from the service's cache.
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	cq.LastRun = s.lastRuns[cqi.Name]
+	id := fmt.Sprintf("%s:%s", dbi.Name, cqi.Name)
+	cq.LastRun, cq.HasRun = s.lastRuns[id]
 
 	// Set the retention policy to default if it wasn't specified in the query.
 	if cq.intoRP() == "" {
@@ -245,18 +269,12 @@ func (s *Service) ExecuteContinuousQuery(dbi *meta.DatabaseInfo, cqi *meta.Conti
 	}
 
 	// See if this query needs to be run.
-	computeNoMoreThan := time.Duration(s.Config.ComputeNoMoreThan)
-	run, err := cq.shouldRunContinuousQuery(s.Config.ComputeRunsPerInterval, computeNoMoreThan)
+	run, nextRun, err := cq.shouldRunContinuousQuery(now)
 	if err != nil {
 		return err
 	} else if !run {
 		return nil
 	}
-
-	// We're about to run the query so store the time.
-	lastRun := time.Now()
-	cq.LastRun = lastRun
-	s.lastRuns[cqi.Name] = lastRun
 
 	// Get the group by interval.
 	interval, err := cq.q.GroupByInterval()
@@ -266,46 +284,53 @@ func (s *Service) ExecuteContinuousQuery(dbi *meta.DatabaseInfo, cqi *meta.Conti
 		return nil
 	}
 
-	// Calculate and set the time range for the query.
-	startTime := now.Round(interval)
-	if startTime.UnixNano() > now.UnixNano() {
-		startTime = startTime.Add(-interval)
+	resampleEvery := interval
+	if cq.Resample.Every != 0 {
+		resampleEvery = cq.Resample.Every
 	}
 
-	if err := cq.q.SetTimeRange(startTime, startTime.Add(interval)); err != nil {
-		s.Logger.Printf("error setting time range: %s\n", err)
+	// We're about to run the query so store the current time closest to the nearest interval.
+	// If all is going well, this time should be the same as nextRun.
+	cq.LastRun = now.Truncate(resampleEvery)
+	s.lastRuns[id] = cq.LastRun
+
+	// Retrieve the oldest interval we should calculate based on the next time
+	// interval. We do this instead of using the current time just in case any
+	// time intervals were missed. If they were missed, we still need to do at
+	// least one calculation, but we don't need to do a calculation for every
+	// calculation we missed since they'll all end up returning the same results
+	// anyway.
+	resampleFor := interval
+	if cq.Resample.For != 0 {
+		resampleFor = cq.Resample.For
+	} else if interval < resampleEvery {
+		resampleFor = resampleEvery
+	}
+	oldestTime := nextRun.Add(-resampleFor)
+
+	// If the resample interval is greater than the interval of the query, use the
+	// query interval instead.
+	if interval < resampleEvery {
+		resampleEvery = interval
 	}
 
-	if s.loggingEnabled {
-		s.Logger.Printf("executing continuous query %s", cq.Info.Name)
-	}
-
-	// Do the actual processing of the query & writing of results.
-	if err := s.runContinuousQueryAndWriteResult(cq); err != nil {
-		s.Logger.Printf("error: %s. running: %s\n", err, cq.q.String())
-		return err
-	}
-
-	recomputeNoOlderThan := time.Duration(s.Config.RecomputeNoOlderThan)
-
-	for i := 0; i < s.Config.RecomputePreviousN; i++ {
-		// if we're already more time past the previous window than we're going to look back, stop
-		if now.Sub(startTime) > recomputeNoOlderThan {
-			return nil
-		}
-		newStartTime := startTime.Add(-interval)
-
-		if err := cq.q.SetTimeRange(newStartTime, startTime); err != nil {
+	// Calculate and set the time range for the query. Go from most recent to least.
+	startTime := now.Add(-resampleEvery).Truncate(interval)
+	for ; !startTime.Before(oldestTime); startTime = startTime.Add(-interval) {
+		endTime := startTime.Add(interval)
+		if err := cq.q.SetTimeRange(startTime, endTime); err != nil {
 			s.Logger.Printf("error setting time range: %s\n", err)
-			return err
 		}
 
+		if s.loggingEnabled {
+			s.Logger.Printf("executing continuous query %s (%v to %v)", cq.Info.Name, startTime, endTime)
+		}
+
+		// Do the actual processing of the query & writing of results.
 		if err := s.runContinuousQueryAndWriteResult(cq); err != nil {
-			s.Logger.Printf("error during recompute previous: %s. running: %s\n", err, cq.q.String())
+			s.Logger.Printf("error: %s. running: %s\n", err, cq.q.String())
 			return err
 		}
-
-		startTime = newStartTime
 	}
 	return nil
 }
@@ -317,11 +342,12 @@ func (s *Service) runContinuousQueryAndWriteResult(cq *ContinuousQuery) error {
 		Statements: influxql.Statements([]influxql.Statement{cq.q}),
 	}
 
+	closing := make(chan struct{})
+	defer close(closing)
+
 	// Execute the SELECT.
-	ch, err := s.QueryExecutor.ExecuteQuery(q, cq.Database, NoChunkingSize)
-	if err != nil {
-		return err
-	}
+	ch := s.QueryExecutor.ExecuteQuery(q, cq.Database, NoChunkingSize, closing)
+
 	// There is only one statement, so we will only ever receive one result
 	res, ok := <-ch
 	if !ok {
@@ -337,12 +363,29 @@ func (s *Service) runContinuousQueryAndWriteResult(cq *ContinuousQuery) error {
 type ContinuousQuery struct {
 	Database string
 	Info     *meta.ContinuousQueryInfo
+	HasRun   bool
 	LastRun  time.Time
+	Resample ResampleOptions
 	q        *influxql.SelectStatement
 }
 
 func (cq *ContinuousQuery) intoRP() string      { return cq.q.Target.Measurement.RetentionPolicy }
 func (cq *ContinuousQuery) setIntoRP(rp string) { cq.q.Target.Measurement.RetentionPolicy = rp }
+
+// Customizes the resampling intervals and duration of this continuous query.
+type ResampleOptions struct {
+	// The query will be resampled at this time interval. The first query will be
+	// performed at this time interval. If this option is not given, the resample
+	// interval is set to the group by interval.
+	Every time.Duration
+
+	// The query will continue being resampled for this time duration. If this
+	// option is not given, the resample duration is the same as the group by
+	// interval. A bucket's time is calculated based on the bucket's start time,
+	// so a 40m resample duration with a group by interval of 10m will resample
+	// the bucket 4 times (using the default time interval).
+	For time.Duration
+}
 
 // NewContinuousQuery returns a ContinuousQuery object with a parsed influxql.CreateContinuousQueryStatement
 func NewContinuousQuery(database string, cqi *meta.ContinuousQueryInfo) (*ContinuousQuery, error) {
@@ -359,41 +402,48 @@ func NewContinuousQuery(database string, cqi *meta.ContinuousQueryInfo) (*Contin
 	cquery := &ContinuousQuery{
 		Database: database,
 		Info:     cqi,
-		q:        q.Source,
+		Resample: ResampleOptions{
+			Every: q.ResampleEvery,
+			For:   q.ResampleFor,
+		},
+		q: q.Source,
 	}
 
 	return cquery, nil
 }
 
 // shouldRunContinuousQuery returns true if the CQ should be schedule to run. It will use the
-// lastRunTime of the CQ and the rules for when to run set through the config to determine
+// lastRunTime of the CQ and the rules for when to run set through the query to determine
 // if this CQ should be run
-func (cq *ContinuousQuery) shouldRunContinuousQuery(runsPerInterval int, noMoreThan time.Duration) (bool, error) {
+func (cq *ContinuousQuery) shouldRunContinuousQuery(now time.Time) (bool, time.Time, error) {
 	// if it's not aggregated we don't run it
 	if cq.q.IsRawQuery {
-		return false, errors.New("continuous queries must be aggregate queries")
+		return false, cq.LastRun, errors.New("continuous queries must be aggregate queries")
 	}
 
 	// since it's aggregated we need to figure how often it should be run
 	interval, err := cq.q.GroupByInterval()
 	if err != nil {
-		return false, err
+		return false, cq.LastRun, err
 	}
 
-	// determine how often we should run this continuous query.
-	// group by time / the number of times to compute
-	computeEvery := time.Duration(interval.Nanoseconds()/int64(runsPerInterval)) * time.Nanosecond
-	// make sure we're running no more frequently than the setting in the config
-	if computeEvery < noMoreThan {
-		computeEvery = noMoreThan
+	// allow the interval to be overwritten by the query's resample options
+	resampleEvery := interval
+	if cq.Resample.Every != 0 {
+		resampleEvery = cq.Resample.Every
 	}
 
-	// if we've passed the amount of time since the last run, do it up
-	if cq.LastRun.Add(computeEvery).UnixNano() <= time.Now().UnixNano() {
-		return true, nil
+	// if we've passed the amount of time since the last run, or there was no last run, do it up
+	if cq.HasRun {
+		nextRun := cq.LastRun.Add(resampleEvery)
+		if nextRun.UnixNano() <= now.UnixNano() {
+			return true, nextRun, nil
+		}
+	} else {
+		return true, now, nil
 	}
 
-	return false, nil
+	return false, cq.LastRun, nil
 }
 
 // assert will panic with a given formatted message if the given condition is false.

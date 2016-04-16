@@ -1,4 +1,4 @@
-package client
+package client // import "github.com/influxdata/influxdb/client/v2"
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/influxdb/influxdb/models"
+	"github.com/influxdata/influxdb/models"
 )
 
 // UDPPayloadSize is a reasonable default payload size for UDP packets that
@@ -21,6 +21,7 @@ const (
 	UDPPayloadSize = 512
 )
 
+// HTTPConfig is the config data needed to create an HTTP Client
 type HTTPConfig struct {
 	// Addr should be of the form "http://host:port"
 	// or "http://[ipv6-host%zone]:port".
@@ -41,8 +42,13 @@ type HTTPConfig struct {
 	// InsecureSkipVerify gets passed to the http client, if true, it will
 	// skip https certificate verification. Defaults to false
 	InsecureSkipVerify bool
+
+	// TLSConfig allows the user to set their own TLS config for the HTTP
+	// Client. If set, this option overrides InsecureSkipVerify.
+	TLSConfig *tls.Config
 }
 
+// UDPConfig is the config data needed to create a UDP Client
 type UDPConfig struct {
 	// Addr should be of the form "host:port"
 	// or "[ipv6-host%zone]:port".
@@ -53,6 +59,7 @@ type UDPConfig struct {
 	PayloadSize int
 }
 
+// BatchPointsConfig is the config data needed to create an instance of the BatchPoints struct
 type BatchPointsConfig struct {
 	// Precision is the write precision of the points, defaults to "ns"
 	Precision string
@@ -69,6 +76,9 @@ type BatchPointsConfig struct {
 
 // Client is a client interface for writing & querying the database
 type Client interface {
+	// Ping checks that status of cluster
+	Ping(timeout time.Duration) (time.Duration, string, error)
+
 	// Write takes a BatchPoints object and writes all Points to InfluxDB.
 	Write(bp BatchPoints) error
 
@@ -80,7 +90,7 @@ type Client interface {
 	Close() error
 }
 
-// NewClient creates a client interface from the given config.
+// NewHTTPClient creates a client interface from the given config.
 func NewHTTPClient(conf HTTPConfig) (Client, error) {
 	if conf.UserAgent == "" {
 		conf.UserAgent = "InfluxDBClient"
@@ -100,6 +110,9 @@ func NewHTTPClient(conf HTTPConfig) (Client, error) {
 			InsecureSkipVerify: conf.InsecureSkipVerify,
 		},
 	}
+	if conf.TLSConfig != nil {
+		tr.TLSClientConfig = conf.TLSConfig
+	}
 	return &client{
 		url:       u,
 		username:  conf.Username,
@@ -110,6 +123,50 @@ func NewHTTPClient(conf HTTPConfig) (Client, error) {
 			Transport: tr,
 		},
 	}, nil
+}
+
+// Ping will check to see if the server is up with an optional timeout on waiting for leader.
+// Ping returns how long the request took, the version of the server it connected to, and an error if one occurred.
+func (c *client) Ping(timeout time.Duration) (time.Duration, string, error) {
+	now := time.Now()
+	u := c.url
+	u.Path = "ping"
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return 0, "", err
+	}
+
+	req.Header.Set("User-Agent", c.useragent)
+
+	if c.username != "" {
+		req.SetBasicAuth(c.username, c.password)
+	}
+
+	if timeout > 0 {
+		params := req.URL.Query()
+		params.Set("wait_for_leader", fmt.Sprintf("%.0fs", timeout.Seconds()))
+		req.URL.RawQuery = params.Encode()
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return 0, "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 0, "", err
+	}
+
+	if resp.StatusCode != http.StatusNoContent {
+		var err = fmt.Errorf(string(body))
+		return 0, "", err
+	}
+
+	version := resp.Header.Get("X-Influxdb-Version")
+	return time.Since(now), version, nil
 }
 
 // Close releases the client's resources.
@@ -142,6 +199,12 @@ func NewUDPClient(conf UDPConfig) (Client, error) {
 	}, nil
 }
 
+// Ping will check to see if the server is up with an optional timeout on waiting for leader.
+// Ping returns how long the request took, the version of the server it connected to, and an error if one occurred.
+func (uc *udpclient) Ping(timeout time.Duration) (time.Duration, string, error) {
+	return 0, "", nil
+}
+
 // Close releases the udpclient's resources.
 func (uc *udpclient) Close() error {
 	return uc.conn.Close()
@@ -166,6 +229,8 @@ type udpclient struct {
 type BatchPoints interface {
 	// AddPoint adds the given point to the Batch of points
 	AddPoint(p *Point)
+	// AddPoints adds the given points to the Batch of points
+	AddPoints(ps []*Point)
 	// Points lists the points in the Batch
 	Points() []*Point
 
@@ -219,6 +284,10 @@ func (bp *batchpoints) AddPoint(p *Point) {
 	bp.points = append(bp.points, p)
 }
 
+func (bp *batchpoints) AddPoints(ps []*Point) {
+	bp.points = append(bp.points, ps...)
+}
+
 func (bp *batchpoints) Points() []*Point {
 	return bp.points
 }
@@ -259,14 +328,15 @@ func (bp *batchpoints) SetRetentionPolicy(rp string) {
 	bp.retentionPolicy = rp
 }
 
+// Point represents a single data point
 type Point struct {
 	pt models.Point
 }
 
 // NewPoint returns a point with the given timestamp. If a timestamp is not
 // given, then data is sent to the database without a timestamp, in which case
-// the server will assign local time upon reception. NOTE: it is recommended
-// to send data without a timestamp.
+// the server will assign local time upon reception. NOTE: it is recommended to
+// send data with a timestamp.
 func NewPoint(
 	name string,
 	tags map[string]string,
@@ -302,7 +372,7 @@ func (p *Point) Name() string {
 	return p.pt.Name()
 }
 
-// Name returns the tags associated with the point
+// Tags returns the tags associated with the point
 func (p *Point) Tags() map[string]string {
 	return p.pt.Tags()
 }
@@ -320,6 +390,11 @@ func (p *Point) UnixNano() int64 {
 // Fields returns the fields for the point
 func (p *Point) Fields() map[string]interface{} {
 	return p.pt.Fields()
+}
+
+// NewPointFrom returns a point from the provided models.Point.
+func NewPointFrom(pt models.Point) *Point {
+	return &Point{pt: pt}
 }
 
 func (uc *udpclient) Write(bp BatchPoints) error {
@@ -419,18 +494,18 @@ func NewQuery(command, database, precision string) Query {
 // Response represents a list of statement results.
 type Response struct {
 	Results []Result
-	Err     error
+	Err     string `json:"error,omitempty"`
 }
 
 // Error returns the first error from any statement.
 // Returns nil if no errors occurred on any statements.
 func (r *Response) Error() error {
-	if r.Err != nil {
-		return r.Err
+	if r.Err != "" {
+		return fmt.Errorf(r.Err)
 	}
 	for _, result := range r.Results {
-		if result.Err != nil {
-			return result.Err
+		if result.Err != "" {
+			return fmt.Errorf(result.Err)
 		}
 	}
 	return nil
@@ -439,7 +514,7 @@ func (r *Response) Error() error {
 // Result represents a resultset returned from a single statement.
 type Result struct {
 	Series []models.Row
-	Err    error
+	Err    string `json:"error,omitempty"`
 }
 
 func (uc *udpclient) Query(q Query) (*Response, error) {

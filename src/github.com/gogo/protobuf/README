@@ -1,7 +1,9 @@
 GoGoProtobuf http://github.com/gogo/protobuf extends 
 GoProtobuf http://github.com/golang/protobuf
 
-Go support for Protocol Buffers - Google's data interchange format
+# Go support for Protocol Buffers
+
+Google's data interchange format.
 Copyright 2010 The Go Authors.
 https://github.com/golang/protobuf
 
@@ -10,15 +12,23 @@ This package and the code it generates requires at least Go 1.4.
 This software implements Go bindings for protocol buffers.  For
 information about protocol buffers themselves, see
 	https://developers.google.com/protocol-buffers/
-To use this software, you must first install the standard C++
-implementation of protocol buffers from
+
+## Installation ##
+
+To use this software, you must:
+- Install the standard C++ implementation of protocol buffers from
 	https://developers.google.com/protocol-buffers/
-And of course you must also install the Go compiler and tools from
+- Of course, install the Go compiler and tools from
 	https://golang.org/
-See
+  See
 	https://golang.org/doc/install
-for details or, if you are using gccgo, follow the instructions at
+  for details or, if you are using gccgo, follow the instructions at
 	https://golang.org/doc/install/gccgo
+- Grab the code from the repository and install the proto package.
+  The simplest way is to run `go get -u github.com/golang/protobuf/{proto,protoc-gen-go}`.
+  The compiler plugin, protoc-gen-go, will be installed in $GOBIN,
+  defaulting to $GOPATH/bin.  It must be in your $PATH for the protocol
+  compiler, protoc, to find it.
 
 This software has two parts: a 'protocol compiler plugin' that
 generates Go source files that, once compiled, can access and manage
@@ -34,18 +44,7 @@ There are no insertion points in the plugin.
 GoGoProtobuf provides extensions for protocol buffers and GoProtobuf
 see http://github.com/gogo/protobuf/gogoproto/doc.go
 
-To install this code:
-
-The simplest way is to run go get.
-
-	# Grab the code from the repository and install the proto package.
-	go get -u github.com/gogo/protobuf/proto
-	go get -u github.com/gogo/protobuf/protoc-gen-gogo
-	go get -u github.com/gogo/protobuf/gogoproto
-
-The compiler plugin, protoc-gen-gogo, will be installed in $GOBIN,
-defaulting to $GOPATH/bin.  It must be in your $PATH for the protocol
-compiler, protoc, to find it.
+## Using protocol buffers with Go ##
 
 Once the software is installed, there are two steps to using it.
 First you must compile the protocol buffer definitions and then import
@@ -116,8 +115,15 @@ for a protocol buffer variable v:
 	with distinguished wrapper types for each possible field value.
   - Marshal and Unmarshal are functions to encode and decode the wire format.
 
+When the .proto file specifies `syntax="proto3"`, there are some differences:
+
+  - Non-repeated fields of non-message type are values instead of pointers.
+  - Getters are only generated for message and oneof fields.
+  - Enum types do not get an Enum method.
+
 Consider file test.proto, containing
 
+```proto
 	package example;
 	
 	enum FOO { X = 17; };
@@ -130,9 +136,11 @@ Consider file test.proto, containing
 	    required string RequiredField = 5;
 	  }
 	}
+```
 
 To create and play with a Test object from the example package,
 
+```go
 	package main
 
 	import (
@@ -146,6 +154,7 @@ To create and play with a Test object from the example package,
 		test := &example.Test {
 			Label: proto.String("hello"),
 			Type:  proto.Int32(17),
+			Reps:  []int64{1, 2, 3},
 			Optionalgroup: &example.Test_OptionalGroup {
 				RequiredField: proto.String("good bye"),
 			},
@@ -165,10 +174,32 @@ To create and play with a Test object from the example package,
 		}
 		// etc.
 	}
+```
 
 
-gRPC Support
-============
+## Parameters ##
+
+To pass extra parameters to the plugin, use a comma-separated
+parameter list separated from the output directory by a colon:
+
+
+	protoc --gogo_out=plugins=grpc,import_path=mypackage:. *.proto
+
+
+- `import_prefix=xxx` - a prefix that is added onto the beginning of
+  all imports. Useful for things like generating protos in a
+  subdirectory, or regenerating vendored protobufs in-place.
+- `import_path=foo/bar` - used as the package if no input files
+  declare `go_package`. If it contains slashes, everything up to the
+  rightmost slash is ignored.
+- `plugins=plugin1+plugin2` - specifies the list of sub-plugins to
+  load. The only plugin in this repo is `grpc`.
+- `Mfoo/bar.proto=quux/shme` - declares that foo/bar.proto is
+  associated with Go package quux/shme.  This is subject to the
+  import_prefix parameter.
+
+## gRPC Support ##
+
 If a proto file specifies RPC services, protoc-gen-go can be instructed to
 generate code compatible with gRPC (http://www.grpc.io/). To do this, pass
 the `plugins` parameter to protoc-gen-go; the usual way is to insert it into
