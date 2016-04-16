@@ -17,7 +17,7 @@ download stage as well as caching the required downloading.
 The approach for creating the files in this repository is to fetch
 the desired version from influxdb repository (as tar-ball or via git)
 and put it in a directory `$top/src/github.com/influxdb` then with
-`GOPATH` set to `$top` a `got get` is used like this:
+`GOPATH` set to `$top` a `go get` is used like this:
 
 ~~~
 go get -d -v github.com/influxdb/influxdb/cmd/influx
@@ -40,8 +40,8 @@ do
   cd $( dirname $x )
   git remote -v > .gitreference
   ( git log -n1 |head -1 ) >> .gitreference 
-  rm -rf $x
   )
+  rm -rf $x
 done
 # (yea, this was actually a one-liner, but that is quite unreadable)
 ~~~
