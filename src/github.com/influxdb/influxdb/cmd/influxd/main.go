@@ -28,13 +28,13 @@ var (
 func init() {
 	// If commit, branch, or build time are not set, make that clear.
 	if version == "" {
-		version = "unknown"
+		version = "0.12.1"
 	}
 	if commit == "" {
-		commit = "unknown"
+		commit = "e094138084855d444195b252314dfee9eae34cab"
 	}
 	if branch == "" {
-		branch = "unknown"
+		branch = "0.12"
 	}
 }
 
